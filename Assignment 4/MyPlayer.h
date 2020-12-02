@@ -12,7 +12,7 @@
 
 #include <string>
 
-#define MyPlayer		Player200012345		// CHANGE THIS: Your StudentID 
+#define MyPlayer		Player201911067		// CHANGE THIS: Your StudentID 
 #define PLAYER_NAME		"Hello Snake :)"	// CHANGE THIS: Name your player
 
 namespace snake_arena {
@@ -25,6 +25,9 @@ namespace snake_arena {
 		virtual Direction selectDirection(
 			int turn, Snake* player_snake, Snake* enemy_snake,
 			std::vector<Fruit*> fruits);
+	private:
+		std::vector<char> dir_log;
+		std::vector<std::string> switch_log;
 	};
 }
 
