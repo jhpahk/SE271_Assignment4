@@ -152,19 +152,183 @@ namespace snake_arena {
 			}
 		}
 
-		int count = 0;
-		int x_check_idx = 0;
-		int y_check_idx = 0;
-		int ex_obs_pos[2];
-		bool change_twice = false;
-		int cur_x;
-		int cur_y;
+		std::vector<int> ex_obs_pos;
+		std::vector<int> cur_obs_pos;
+		int ex_obs_count = 0;
+		int cur_obs_count = 0;
+		int temp_obs_count = 0;
+		int cur_y_up = p_y;
+		int cur_y_down = p_y;
+		bool cannot_go = true;
 
 		// Can go right?
-		while (true) {
-			cur_x = p_x + x_check_idx;
-			cur_y = p_y + y_check_idx;
-			if (map[cur_y][cur_x])
+		if (p_dir != 'L') {
+			for (int x = p_x; x < 14; x++) {
+				cur_y_up = p_y;
+				cur_y_down = p_y;
+				if (map[p_y][x] != 0) {		// 검사 종료 조건 -> 맞은편 벽에 도달
+					for (int y = p_y; y >= 0; y--) {
+						if (map[y][x] == 0) {
+							cannot_go = false;
+							break;
+						}
+						for (int y_check = 0; y_check < ex_obs_count; y_check++) {
+							if (y == ex_obs_pos[y_check] + 1) {
+								break;
+							}
+						}
+						if (!cannot_go) {
+							break;
+						}
+					}
+					for (int y = p_y; y < 15; y++) {
+						if (map[y][x] == 0) {
+							cannot_go = false;
+							break;
+						}
+						for (int y_check = 0; y_check < ex_obs_count; y_check++) {
+							if (y == ex_obs_pos[y_check] - 1) {
+								break;
+							}
+						}
+						if (!cannot_go) {
+							break;
+						}
+					}
+					if (cannot_go) {
+						dir_avail[3] = false;
+					}
+				}
+				cur_obs_count = 0;
+				cur_obs_pos.clear();
+				if (x == p_x) {
+					while (ex_obs_count < 2) {
+						cur_y_up++;
+						cur_y_down--;
+						if (x < 14 && map[cur_y_up][x + 1] != 0 || cur_y_up == 0) {
+							ex_obs_pos.push_back(cur_y_up + 1);
+							ex_obs_count++;
+						}
+						if (x < 14 && map[cur_y_down][x + 1] != 0 || cur_y_down == 14) {
+							ex_obs_pos.push_back(cur_y_down - 1);
+							ex_obs_count++;
+						}
+					}
+					continue;
+				}
+				for (int obs = 0; obs < ex_obs_count; obs++) {
+					temp_obs_count = 0;
+					if (ex_obs_pos[obs] > 0 && map[ex_obs_pos[obs] - 1][x] != 0) {
+						cur_obs_pos.push_back(ex_obs_pos[obs] - 1);
+						cur_obs_count++;
+						temp_obs_count++;
+					}
+					if (ex_obs_pos[obs] < 14 && map[ex_obs_pos[obs] + 1][x] != 0) {
+						cur_obs_pos.push_back(ex_obs_pos[obs] + 1);
+						cur_obs_count++;
+						temp_obs_count++;
+					}
+					if (temp_obs_count < 2) {
+						cannot_go = false;
+						break;
+					}
+				}
+				if (!cannot_go) {
+					break;
+				}
+				else {
+					ex_obs_count = cur_obs_count;
+					ex_obs_pos = cur_obs_pos;
+				}
+			}
+		}
+
+		cannot_go = true;
+		cur_obs_pos.clear();
+		ex_obs_pos.clear();
+		cur_obs_count = 0;
+		ex_obs_count = 0;
+
+		// Can go left?
+		if (p_dir != 'R') {
+			for (int x = p_x; x >= 0; x--) {
+				cur_y_up = p_y;
+				cur_y_down = p_y;
+				if (map[p_y][x] != 0) {		// 검사 종료 조건 -> 맞은편 벽에 도달
+					for (int y = p_y; y >= 0; y--) {
+						if (map[y][x] == 0) {
+							cannot_go = false;
+							break;
+						}
+						for (int y_check = 0; y_check < ex_obs_count; y_check++) {
+							if (y == ex_obs_pos[y_check] + 1) {
+								break;
+							}
+						}
+						if (!cannot_go) {
+							break;
+						}
+					}
+					for (int y = p_y; y < 15; y++) {
+						if (map[y][x] == 0) {
+							cannot_go = false;
+							break;
+						}
+						for (int y_check = 0; y_check < ex_obs_count; y_check++) {
+							if (y == ex_obs_pos[y_check] - 1) {
+								break;
+							}
+						}
+						if (!cannot_go) {
+							break;
+						}
+					}
+					if (cannot_go) {
+						dir_avail[3] = false;
+					}
+				}
+				cur_obs_count = 0;
+				cur_obs_pos.clear();
+				if (x == p_x) {
+					while (ex_obs_count < 2) {
+						cur_y_up++;
+						cur_y_down--;
+						if (p_x > 0 && map[cur_y_up][x - 1] != 0 || cur_y_up == 0) {
+							ex_obs_pos.push_back(cur_y_up + 1);
+							ex_obs_count++;
+						}
+						if (p_x > 0 && map[cur_y_down][x - 1] != 0 || cur_y_down == 14) {
+							ex_obs_pos.push_back(cur_y_down - 1);
+							ex_obs_count++;
+						}
+					}
+					continue;
+				}
+				for (int obs = 0; obs < ex_obs_count; obs++) {
+					temp_obs_count = 0;
+					if (ex_obs_pos[obs] > 0 && map[ex_obs_pos[obs] - 1][x] != 0) {
+						cur_obs_pos.push_back(ex_obs_pos[obs] - 1);
+						cur_obs_count++;
+						temp_obs_count++;
+					}
+					if (ex_obs_pos[obs] < 14 && map[ex_obs_pos[obs] + 1][x] != 0) {
+						cur_obs_pos.push_back(ex_obs_pos[obs] + 1);
+						cur_obs_count++;
+						temp_obs_count++;
+					}
+					if (temp_obs_count < 2) {
+						cannot_go = false;
+						break;
+					}
+				}
+				if (!cannot_go) {
+					break;
+				}
+				else {
+					ex_obs_count = cur_obs_count;
+					ex_obs_pos = cur_obs_pos;
+				}
+			}
 		}
 
 
