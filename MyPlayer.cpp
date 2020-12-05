@@ -27,6 +27,12 @@ namespace snake_arena {
 	// Your function to primarily implement
 	Direction MyPlayer::selectDirection(int turn, Snake* player_snake, Snake* enemy_snake, std::vector<Fruit*> fruits) {
 
+		for (int i = 0; i < 15; i++) {
+			for (int j = 0; j < 15; j++) {
+				map_checked[j][i] = 0;
+			}
+		}
+
 		int player_len = player_snake->getLength();
 		Pos player_head = player_snake->getPositions()[0];
 		int p_tail[2];
@@ -50,8 +56,8 @@ namespace snake_arena {
 			}
 		}*/
 
-		int p_x = player_head.x;
-		int p_y = player_head.y;
+		p_x = player_head.x;
+		p_y = player_head.y;
 		char p_dir;		// 직전에 이동한 방향
 		if (player_snake->getDirection().dy == -1) {
 			p_dir = 'U';
@@ -113,224 +119,193 @@ namespace snake_arena {
 		if (map[p_y - 1][p_x] != 0 || p_y == 0) {
 			dir_avail[0] = false;
 		}
+
+
+		
+		// 갇히는거 판단 (벽 제외)
+		bool wall[4] = { false, false, false, false };
+		if (dir_avail[3]) {
+			if (!can_go_outside(map, p_x + 1, p_y, wall)) {
+				dir_avail[3] = false;
+			}
+		}
+		if (dir_avail[2]) {
+			if (!can_go_outside(map, p_x - 1, p_y, wall)) {
+				dir_avail[2] = false;
+			}
+		}
+		if (dir_avail[1]) {
+			if (!can_go_outside(map, p_x, p_y + 1, wall)) {
+				dir_avail[1] = false;
+			}
+		}
+		if (dir_avail[0]) {
+			if (!can_go_outside(map, p_x, p_y - 1, wall)) {
+				dir_avail[0] = false;
+			}
+		}
 		
 		
-		// Box 안으로 들어가는 것 방지
-		if (p_y > 0 && p_x > 0 && p_x < 14 && p_dir == 'U' && map[p_y - 1][p_x] != 0) {		// 위로 가다 막혔을 때
-			int count = 0;
-			for (int y = p_y - 1; y < 15; y++) {		// 오른쪽으로 못가는 경우
-				if (map[y][p_x + 1] != 0) {
-					count++;
-				}
-				if (count == 2) {
-					dir_avail[3] = false;
-					break;
-				}
-				if (map[y][p_x - 1] != 0) {
-					if (y != p_y - 1) {
-						break;
-					}
-					break;
-				}
+		// 위쪽 벽을 만났을 때
+		if (p_y == 0) {
+			// bool wall[4] = { true, false, false, true };		// 오른쪽 check
+			wall[0] = true;
+			wall[1] = false;
+			wall[2] = false;
+			wall[3] = true;
+			if (p_x < 14 && !can_go_outside(map, p_x + 1, p_y, wall)) {
+				bool test = can_go_outside(map, p_x + 1, p_y, wall);
+				dir_avail[3] = false;
 			}
 
-			count = 0;
-			for (int y = p_y - 1; y < 15; y++) {		// 왼쪽으로 못가는 경우
-				if (map[y][p_x - 1] != 0) {
-					count++;
-				}
-				if (count == 2) {
-					dir_avail[2] = false;
-					break;
-				}
-				if (map[y][p_x + 1] != 0) {
-					if (y != p_y - 1) {
-						break;
-					}
-					break;
-				}
+			// bool wall[4] = { true, false, false, true };		// 왼쪽 check
+			wall[0] = true;
+			wall[1] = false;
+			wall[2] = false;
+			wall[3] = true;
+			if (p_x > 0 && !can_go_outside(map, p_x - 1, p_y, wall)) {
+				dir_avail[2] = false;
 			}
 		}
 
-		std::vector<int> ex_obs_pos;
-		std::vector<int> cur_obs_pos;
-		int ex_obs_count = 0;
-		int cur_obs_count = 0;
-		int temp_obs_count = 0;
-		int cur_y_up = p_y;
-		int cur_y_down = p_y;
-		bool cannot_go = true;
+		// 아래쪽 벽을 만났을 때
+		if (p_y == 14) {
+			// bool wall[4] = { false, true, false, true };		// 오른쪽 check
+			wall[0] = false;
+			wall[1] = true;
+			wall[2] = false;
+			wall[3] = true;
+			if (p_x < 14 && !can_go_outside(map, p_x + 1, p_y, wall)) {
+				dir_avail[3] = false;
+			}
 
-		// Can go right?
-		if (p_dir != 'L') {
-			for (int x = p_x; x < 14; x++) {
-				cur_y_up = p_y;
-				cur_y_down = p_y;
-				if (map[p_y][x] != 0) {		// 검사 종료 조건 -> 맞은편 벽에 도달
-					for (int y = p_y; y >= 0; y--) {
-						if (map[y][x] == 0) {
-							cannot_go = false;
-							break;
-						}
-						for (int y_check = 0; y_check < ex_obs_count; y_check++) {
-							if (y == ex_obs_pos[y_check] + 1) {
-								break;
-							}
-						}
-						if (!cannot_go) {
-							break;
-						}
-					}
-					for (int y = p_y; y < 15; y++) {
-						if (map[y][x] == 0) {
-							cannot_go = false;
-							break;
-						}
-						for (int y_check = 0; y_check < ex_obs_count; y_check++) {
-							if (y == ex_obs_pos[y_check] - 1) {
-								break;
-							}
-						}
-						if (!cannot_go) {
-							break;
-						}
-					}
-					if (cannot_go) {
-						dir_avail[3] = false;
-					}
-				}
-				cur_obs_count = 0;
-				cur_obs_pos.clear();
-				if (x == p_x) {
-					while (ex_obs_count < 2) {
-						cur_y_up++;
-						cur_y_down--;
-						if (x < 14 && map[cur_y_up][x + 1] != 0 || cur_y_up == 0) {
-							ex_obs_pos.push_back(cur_y_up + 1);
-							ex_obs_count++;
-						}
-						if (x < 14 && map[cur_y_down][x + 1] != 0 || cur_y_down == 14) {
-							ex_obs_pos.push_back(cur_y_down - 1);
-							ex_obs_count++;
-						}
-					}
-					continue;
-				}
-				for (int obs = 0; obs < ex_obs_count; obs++) {
-					temp_obs_count = 0;
-					if (ex_obs_pos[obs] > 0 && map[ex_obs_pos[obs] - 1][x] != 0) {
-						cur_obs_pos.push_back(ex_obs_pos[obs] - 1);
-						cur_obs_count++;
-						temp_obs_count++;
-					}
-					if (ex_obs_pos[obs] < 14 && map[ex_obs_pos[obs] + 1][x] != 0) {
-						cur_obs_pos.push_back(ex_obs_pos[obs] + 1);
-						cur_obs_count++;
-						temp_obs_count++;
-					}
-					if (temp_obs_count < 2) {
-						cannot_go = false;
-						break;
-					}
-				}
-				if (!cannot_go) {
-					break;
-				}
-				else {
-					ex_obs_count = cur_obs_count;
-					ex_obs_pos = cur_obs_pos;
-				}
+			// bool wall[4] = { false, true, true, false };		// 왼쪽 check
+			wall[0] = false;
+			wall[1] = true;
+			wall[2] = true;
+			wall[3] = false;
+			if (p_x > 0 && !can_go_outside(map, p_x - 1, p_y, wall)) {
+				dir_avail[2] = false;
 			}
 		}
 
-		cannot_go = true;
-		cur_obs_pos.clear();
-		ex_obs_pos.clear();
-		cur_obs_count = 0;
-		ex_obs_count = 0;
+		// 왼쪽 벽을 만났을 때
+		if (p_x == 0) {
+			// bool wall[4] = { true, false, true, false };		// 위쪽 check
+			wall[0] = true;
+			wall[1] = false;
+			wall[2] = true;
+			wall[3] = false;
+			if (p_y > 0 && !can_go_outside(map, p_x, p_y - 1, wall)) {
+				dir_avail[0] = false;
+			}
 
-		// Can go left?
-		if (p_dir != 'R') {
-			for (int x = p_x; x >= 0; x--) {
-				cur_y_up = p_y;
-				cur_y_down = p_y;
-				if (map[p_y][x] != 0) {		// 검사 종료 조건 -> 맞은편 벽에 도달
-					for (int y = p_y; y >= 0; y--) {
-						if (map[y][x] == 0) {
-							cannot_go = false;
-							break;
-						}
-						for (int y_check = 0; y_check < ex_obs_count; y_check++) {
-							if (y == ex_obs_pos[y_check] + 1) {
-								break;
-							}
-						}
-						if (!cannot_go) {
-							break;
-						}
-					}
-					for (int y = p_y; y < 15; y++) {
-						if (map[y][x] == 0) {
-							cannot_go = false;
-							break;
-						}
-						for (int y_check = 0; y_check < ex_obs_count; y_check++) {
-							if (y == ex_obs_pos[y_check] - 1) {
-								break;
-							}
-						}
-						if (!cannot_go) {
-							break;
-						}
-					}
-					if (cannot_go) {
-						dir_avail[3] = false;
-					}
-				}
-				cur_obs_count = 0;
-				cur_obs_pos.clear();
-				if (x == p_x) {
-					while (ex_obs_count < 2) {
-						cur_y_up++;
-						cur_y_down--;
-						if (p_x > 0 && map[cur_y_up][x - 1] != 0 || cur_y_up == 0) {
-							ex_obs_pos.push_back(cur_y_up + 1);
-							ex_obs_count++;
-						}
-						if (p_x > 0 && map[cur_y_down][x - 1] != 0 || cur_y_down == 14) {
-							ex_obs_pos.push_back(cur_y_down - 1);
-							ex_obs_count++;
-						}
-					}
-					continue;
-				}
-				for (int obs = 0; obs < ex_obs_count; obs++) {
-					temp_obs_count = 0;
-					if (ex_obs_pos[obs] > 0 && map[ex_obs_pos[obs] - 1][x] != 0) {
-						cur_obs_pos.push_back(ex_obs_pos[obs] - 1);
-						cur_obs_count++;
-						temp_obs_count++;
-					}
-					if (ex_obs_pos[obs] < 14 && map[ex_obs_pos[obs] + 1][x] != 0) {
-						cur_obs_pos.push_back(ex_obs_pos[obs] + 1);
-						cur_obs_count++;
-						temp_obs_count++;
-					}
-					if (temp_obs_count < 2) {
-						cannot_go = false;
-						break;
-					}
-				}
-				if (!cannot_go) {
-					break;
-				}
-				else {
-					ex_obs_count = cur_obs_count;
-					ex_obs_pos = cur_obs_pos;
-				}
+			// bool wall[4] = { false, true, true, false };		// 아래쪽 check
+			wall[0] = false;
+			wall[1] = true;
+			wall[2] = true;
+			wall[3] = false;
+			if (p_y < 14 && !can_go_outside(map, p_x + 1, p_y, wall)) {
+				dir_avail[1] = false;
 			}
 		}
 
+		// 오른쪽 벽을 만났을 때
+		if (p_x == 14) {
+			// bool wall[4] = { true, false, false, true };		// 위쪽 check
+			wall[0] = true;
+			wall[1] = false;
+			wall[2] = false;
+			wall[3] = true;
+			if (p_y > 0 && !can_go_outside(map, p_x, p_y - 1, wall)) {
+				dir_avail[0] = false;
+			}
+
+			// bool wall[4] = { false, true, false, true };		// 아래쪽 check
+			wall[0] = false;
+			wall[1] = true;
+			wall[2] = false;
+			wall[3] = true;
+			if (p_y < 14 && !can_go_outside(map, p_x + 1, p_y, wall)) {
+				dir_avail[1] = false;
+			}
+		}
+
+		// 위쪽 장애물을 만났을 때
+		if (p_y > 0 && p_y - 1 != 0) {
+			wall[0] = false;
+			wall[1] = true;
+			wall[2] = false;
+			wall[3] = true;
+			if (p_x < 14 && !can_go_outside(map, p_x + 1, p_y, wall)) {
+				dir_avail[3] = false;
+			}
+
+			wall[0] = false;
+			wall[1] = true;
+			wall[2] = true;
+			wall[3] = false;
+			if (p_x > 0 && !can_go_outside(map, p_x - 1, p_y, wall)) {
+				dir_avail[2] = false;
+			}
+		}
+
+		// 아래쪽 장애물을 만났을 때
+		if (p_y < 14 && p_y + 1 != 0) {
+			wall[0] = true;
+			wall[1] = false;
+			wall[2] = false;
+			wall[3] = true;
+			if (p_x < 14 && !can_go_outside(map, p_x + 1, p_y, wall)) {
+				dir_avail[3] = false;
+			}
+
+			wall[0] = true;
+			wall[1] = false;
+			wall[2] = true;
+			wall[3] = false;
+			if (p_x > 0 && !can_go_outside(map, p_x - 1, p_y, wall)) {
+				dir_avail[2] = false;
+			}
+		}
+
+		// 왼쪽 장애물을 만났을 때
+		if (p_x > 0 && p_x - 1 != 0) {
+			wall[0] = true;
+			wall[1] = false;
+			wall[2] = false;
+			wall[3] = true;
+			if (p_y > 0 && !can_go_outside(map, p_x, p_y - 1, wall)) {
+				dir_avail[0] = false;
+			}
+
+			wall[0] = false;
+			wall[1] = true;
+			wall[2] = false;
+			wall[3] = true;
+			if (p_y < 14 && !can_go_outside(map, p_x, p_y + 1, wall)) {
+				dir_avail[1] = false;
+			}
+		}
+
+		// 오른쪽 장애물을 만났을 때
+		if (p_x < 14 && p_x + 1 != 0) {
+			wall[0] = true;
+			wall[1] = false;
+			wall[2] = true;
+			wall[3] = false;
+			if (p_y > 0 && !can_go_outside(map, p_x, p_y - 1, wall)) {
+				dir_avail[0] = false;
+			}
+
+			wall[0] = false;
+			wall[1] = true;
+			wall[2] = true;
+			wall[3] = false;
+			if (p_y < 14 && !can_go_outside(map, p_x, p_y + 1, wall)) {
+				dir_avail[1] = false;
+			}
+		}
 
 		int sorted_fidx[2] = { 0, 1 };						// 과일 idx를 가까운 순서대로 보관
 		if ((fruit_distance[0] < 0 && fruit_distance[1] < 0 && player_to_fruit[1] < player_to_fruit[0]) || ((fruit_distance[0] > 0 || fruit_distance[1] > 0) && (fruit_distance[0] > fruit_distance[1]))) {
@@ -371,4 +346,124 @@ namespace snake_arena {
 		// 갈 수 있는 방향이 없을 때 -> Game Over, 아무 방향으로 이동
 		return DrtN();
 	}
+
+	bool MyPlayer::can_go_outside(int map[15][15], int x, int y, bool wall[4]) {	// 갇혔는지 판단 (벽 제외)
+		if (map_checked[y][x] == 1) {
+			return map_can_go[y][x];
+		}
+		if ((y == 0 && !wall[0]) || (y == 14 && !wall[1]) || (x == 0 && !wall[2]) || (x == 14 && !wall[3])) {
+			map_checked[y][x] = 1;
+			map_can_go[y][x] = true;
+			return true;
+		}
+		else if (y == 0 || y == 14 || x == 0 || x == 14) {
+			map_checked[y][x] = 1;
+			map_can_go[y][x] = false;
+			return false;
+		}
+		/*
+		if (x == p_x && y == p_y) {
+			map_checked[y][x] = 1;
+			map_can_go[y][x] = false;
+			return false;
+		}
+		*/
+		map_checked[y][x] = 1;
+		map_can_go[y][x] = false;
+
+		bool go_up = true;
+		bool go_down = true;
+		bool go_left = true;
+		bool go_right = true;
+
+
+		if ((y > 0 && map[y - 1][x] != 0)/* || (x == p_x && y - 1 == p_y)*/) {
+			go_up = false;
+		}
+		else {
+			if (ex_check_dir != 'U') {
+				ex_check_dir = 'D';
+				go_up = can_go_outside(map, x, y - 1, wall);
+			}
+			else {
+				go_up = false;
+			}
+		}
+
+		if (go_up) {
+			map_checked[y][x] = 1;
+			map_can_go[y][x] = true;
+			return true;
+		}
+
+
+		if ((y < 14 && map[y + 1][x] != 0)/* || (x == p_x && y + 1 == p_y)*/) {
+			go_down = false;
+		}
+		else {
+			if (ex_check_dir != 'D') {
+				ex_check_dir = 'U';
+				go_down = can_go_outside(map, x, y + 1, wall);
+			}
+			else {
+				go_down = false;
+			}
+		}
+
+		if (go_down) {
+			map_checked[y][x] = 1;
+			map_can_go[y][x] = true;
+			return true;
+		}
+
+
+		if ((x > 0 && map[y][x - 1] != 0)/* || (x - 1 == p_x && y == p_y)*/) {
+			go_left = false;
+		}
+		else {
+			if (ex_check_dir != 'L') {
+				ex_check_dir = 'R';
+				go_left = can_go_outside(map, x - 1, y, wall);
+			}
+			else {
+				go_left = false;
+			}
+		}
+
+		if (go_left) {
+			map_checked[y][x] = 1;
+			map_can_go[y][x] = true;
+			return true;
+		}
+
+
+		if ((x < 14 && map[y][x + 1] != 0)/* || (x + 1 == p_x && y == p_y)*/) {
+			go_right = false;
+		}
+		else {
+			if (ex_check_dir != 'R') {
+				ex_check_dir = 'L';
+				go_right = can_go_outside(map, x + 1, y, wall);
+			}
+			else {
+				go_right = false;
+			}
+		}
+
+		if (go_right) {
+			map_checked[y][x] = 1;
+			map_can_go[y][x] = true;
+			return true;
+		}
+
+		if (!go_up && !go_down && !go_left && !go_right) {
+			return false;
+		}
+		else {
+			map_checked[y][x] = 1;
+			map_can_go[y][x] = true;
+			return true;
+		}
+	}
 }
+
