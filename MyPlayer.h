@@ -27,11 +27,14 @@ namespace snake_arena {
 			std::vector<Fruit*> fruits);
 	private:
 		int mapsize;
-		bool can_go_outside(int map[15][15], int x, int y, bool wall[4]);
-		char ex_check_dir;
+		char ex_check_dir[15][15];
 		int map_checked[15][15];
 		bool map_can_go[15][15];
 		int p_x;
 		int p_y;
+		int e_x;
+		int e_y;
+
+		bool can_go_outside(int map[15][15], int x, int y, bool wall[4]);
 	};
 }
