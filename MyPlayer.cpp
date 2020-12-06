@@ -35,6 +35,7 @@ namespace snake_arena {
 
 		int player_len = player_snake->getLength();
 		Pos player_head = player_snake->getPositions()[0];
+
 		int p_tail[2];
 
 		int idx_count = 0;
@@ -58,6 +59,7 @@ namespace snake_arena {
 
 		p_x = player_head.x;
 		p_y = player_head.y;
+
 		char p_dir;		// 직전에 이동한 방향
 		if (player_snake->getDirection().dy == -1) {
 			p_dir = 'U';
@@ -74,6 +76,9 @@ namespace snake_arena {
 
 		int enemy_len = enemy_snake->getLength();
 		Pos enemy_head = enemy_snake->getPositions()[0];
+
+		e_x = enemy_head.x;
+		e_y = enemy_head.y;
 
 		Pos fruits_pos[2];
 		int fruit_distance[2];
@@ -462,7 +467,7 @@ namespace snake_arena {
 		}
 
 		// 상대에게 공격당하는 것 생각해서 회피
-
+		
 		if (p_y > 0 && p_dir == 'U') {		// up
 			if (p_x < 14 && dir_avail[3] == true && map[p_y - 1][p_x + 1] == 2) {
 				wall[0] = false;
@@ -574,41 +579,79 @@ namespace snake_arena {
 			sorted_fidx[0] = 1;
 			sorted_fidx[1] = 0;
 		}
-
-		for (int i = 0; i < 2; i++) {						// fruit 있는 방향으로 갈 수 있으면 간다
-			int idx = sorted_fidx[i];
-			if (fruit_dir[idx][0] == true && dir_avail[0] == true && p_dir != 'D') {
-				return DrtN();
+		if (fruit_distance[1] <= 312) {							// fruit taking의 적극성 조절
+			for (int i = 0; i < 2; i++) {						// fruit 있는 방향으로 갈 수 있으면 간다
+				int idx = sorted_fidx[i];
+				if (fruit_dir[idx][1] == true && dir_avail[1] == true && p_dir != 'U') {
+					return DrtS();
+				}
+				else if (fruit_dir[idx][2] == true && dir_avail[2] == true && p_dir != 'R') {
+					return DrtW();
+				}
+				else if (fruit_dir[idx][0] == true && dir_avail[0] == true && p_dir != 'D') {
+					return DrtN();
+				}
+				else if (fruit_dir[idx][3] == true && dir_avail[3] == true && p_dir != 'L') {
+					return DrtE();
+				}
+				else {
+					if (dir_avail[0] == true && p_dir != 'D') {
+						return DrtN();
+					}
+					else if (dir_avail[3] == true && p_dir != 'L') {
+						return DrtE();
+					}
+					else if (dir_avail[1] == true && p_dir != 'U') {
+						return DrtS();
+					}
+					else if (dir_avail[2] == true && p_dir != 'R') {
+						return DrtW();
+					}
+					else {
+						if (p_x < 14 && map[p_y][p_x + 1] == 0) {
+							return DrtE();
+						}
+						else if (p_x > 0 && map[p_y][p_x - 1] == 0) {
+							return DrtW();
+						}
+						else if (p_y < 14 && map[p_y + 1][p_x] == 0) {
+							return DrtS();
+						}
+						else {
+							return DrtN();
+						}
+					}
+				}
 			}
-			else if (fruit_dir[idx][1] == true && dir_avail[1] == true && p_dir != 'U') {
-				return DrtS();
-			}
-			else if (fruit_dir[idx][2] == true && dir_avail[2] == true && p_dir != 'R') {
-				return DrtW();
-			}
-			else if (fruit_dir[idx][3] == true && dir_avail[3] == true && p_dir != 'L') {
-				return DrtE();
-			}
-		}
-
-		// fruit 방향으로 갈 수 없을 때
-		
-		if (dir_avail[0] == true && p_dir != 'D') {
-			return DrtN();
-		}
-		else if (dir_avail[3] == true && p_dir != 'L') {
-			return DrtE();
-		}
-		else if (dir_avail[1] == true && p_dir != 'U') {
-			return DrtS();
-		}
-		else if (dir_avail[2] == true && p_dir != 'R') {
-			return DrtW();
 		}
 		else {
-			return DrtE();
+			if (dir_avail[0] == true && p_dir != 'D') {
+				return DrtN();
+			}
+			else if (dir_avail[3] == true && p_dir != 'L') {
+				return DrtE();
+			}
+			else if (dir_avail[1] == true && p_dir != 'U') {
+				return DrtS();
+			}
+			else if (dir_avail[2] == true && p_dir != 'R') {
+				return DrtW();
+			}
+			else {
+				if (p_x < 14 && map[p_y][p_x + 1] == 0) {
+					return DrtE();
+				}
+				else if (p_x > 0 && map[p_y][p_x - 1] == 0) {
+					return DrtW();
+				}
+				else if (p_y < 14 && map[p_y + 1][p_x] == 0) {
+					return DrtS();
+				}
+				else {
+					return DrtN();
+				}
+			}
 		}
-		
 	}
 
 	bool MyPlayer::can_go_outside(int map[15][15], int x, int y, bool wall[4]) {	// 갇혔는지 판단
